@@ -3,7 +3,7 @@
 4WATCHAN is a simple Python project that lets you watch threads on 4chan for new images and videos and automatically download them. The project consists of two scripts:
 
 - **`addthread.py`**: Adds a thread URL to a watch list.
-- **`watcher.py`**: Monitors the added threads for new posts and downloads any new images/videos them.
+- **`watcher.py`**: Monitors the added threads for new posts and downloads any new images/videos from them.
 
 ## Features
 
