@@ -48,6 +48,7 @@ python watcher.py
 
 - The script will periodically (every 20 seconds) check each thread for new posts.
 - If new posts with images/videos are found, the images/videos will be downloaded into the appropriate folder (`downloads/<boardCode>/<threadId>/`).
+- Watcher automatically removes any 404'd threads from the thread watch list
 
 ## Todo
 
