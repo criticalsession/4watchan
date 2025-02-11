@@ -79,7 +79,7 @@ try:
         with open("threads.json", "w") as file:
             json.dump(updated_threads, file, indent=4)
 
-        time.sleep(5)
+        time.sleep(20)
 except KeyboardInterrupt:
     print('Exiting...')
     print('Bye.')
