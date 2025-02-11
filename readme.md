@@ -56,4 +56,6 @@ python watcher.py
 
 ## Known Issues
 
-**Basic URL parsing**: The current URL processing is simple, so ensure your input URL matches the expected format (`https://boards.4chan.org/<boardcode>/thread/<thread_id>` or `https://boards.4chan.org/<boardcode>/thread/<thread_id>#p<comment_id>`).
+**Basic URL parsing**: The current URL processing is simple, so ensure your input URL matches the expected format:
+- `https://boards.4chan.org/<boardcode>/thread/<thread_id>`, or
+- `https://boards.4chan.org/<boardcode>/thread/<thread_id>#p<comment_id>`
