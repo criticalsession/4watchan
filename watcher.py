@@ -11,8 +11,6 @@ print()
 print('ctrl+c to exit')
 print()
 try:
-    first_check = True
-
     while True:
         watched_threads = []
         if not os.path.exists('threads.json'):
@@ -27,11 +25,6 @@ try:
             print('There are no threads being watched. Exiting...')
             print('Bye.')
             sys.exit()
-
-        if not first_check:
-            sys.stdout.write("\033[F\033[K")
-        else:
-            first_check = False
 
         print(f'{datetime.now().isoformat()} Checking {len(watched_threads)} watched threads')
 
@@ -76,10 +69,10 @@ try:
 
                     urllib.request.urlretrieve(file_url, save_path)
 
-                if found_new:
-                    print()
-
                 thread_data['lastChecked'] = comment_no
+
+            if found_new:
+                print()
 
             updated_threads.append(thread_data)
 
