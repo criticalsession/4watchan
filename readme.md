@@ -5,6 +5,8 @@
 - **`addthread.py`**: Adds a thread URL to a watch list.
 - **`watcher.py`**: Monitors the added threads for new posts and downloads any new images/videos from them.
 
+<p align="center"><img src="https://i.imgur.com/QuxQyGS.png" width="540" /></p>
+
 ## Features
 
 - **Add Threads**: Easily add thread URLs to your watch list.
