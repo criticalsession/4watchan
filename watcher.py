@@ -4,82 +4,111 @@ import os
 import time
 import sys
 from datetime import datetime
-from operator import truediv
 
-print('4WATCHAN - Thread Watcher')
-print()
-print('ctrl+c to exit')
-print()
-try:
-    while True:
-        watched_threads = []
-        if not os.path.exists('threads.json'):
-            print('There are no threads being watched. Exiting...')
-            print('Bye.')
-            sys.exit()
-        else:
-            with open('threads.json', 'r') as file:
-                watched_threads = json.load(file)
+WATCHLIST_FILE = 'threads.json'
+DOWNLOADS_DIR = 'downloads'
+CHECK_INTERVAL = 30  # seconds between checks
 
-        if len(watched_threads) == 0:
-            print('There are no threads being watched. Exiting...')
-            print('Bye.')
-            sys.exit()
+def load_watchlist():
+    """Loads the watchlist from a JSON file or exits if no threads are being watched."""
+    if not os.path.exists(WATCHLIST_FILE):
+        print("No threads are being watched. Exiting...")
+        sys.exit()
+    try:
+        with open(WATCHLIST_FILE, 'r', encoding='utf-8') as file:
+            watchlist = json.load(file)
+            if not watchlist:
+                print("No threads are being watched. Exiting...")
+                sys.exit()
+            return watchlist
+    except (json.JSONDecodeError, IOError):
+        print("Watchlist is malformed. Exiting...")
+        sys.exit()
 
-        print(f'{datetime.now().isoformat()} Checking {len(watched_threads)} watched threads')
+def save_watchlist(threads):
+    """Saves watchlist file"""
+    with open(WATCHLIST_FILE, "w", encoding='utf-8') as file:
+        json.dump(threads, file, indent=4)
 
-        updated_threads = []
+def fetch_thread_data(thread_url):
+    """Fetches thread JSON data from the given URL, handling errors gracefully."""
+    try:
+        with urllib.request.urlopen(thread_url) as url:
+            return json.load(url)
+    except urllib.error.HTTPError:
+        print(f"Thread not found: {thread_url} -- Removing from watchlist")
+    except urllib.error.URLError:
+        print(f"Malformed URL: {thread_url} -- Removing from watchlist")
+    except json.JSONDecodeError:
+        print(f"Failed to parse JSON from: {thread_url} -- Skipping")
+    return None
 
-        for thread_data in watched_threads:
-            thread_url = thread_data['url']
-            last_checked = int(thread_data['lastChecked'])
-            board_code = thread_data['boardCode']
-            thread_id = thread_data['threadId']
+def download_file(board_code, thread_id, file_id, file_ext):
+    """Downloads an image file from 4chan and saves it in the appropriate directory."""
+    file_url = f"https://i.4cdn.org/{board_code}/{file_id}{file_ext}"
+    save_path = os.path.join(DOWNLOADS_DIR, board_code, thread_id, f"{file_id}{file_ext}")
 
-            data = []
-            try:
-                with urllib.request.urlopen(thread_url) as url:
-                    data = json.load(url)
-            except urllib.error.HTTPError as e:
-                print('Thread not found -- removing from watchlist')
-            except urllib.error.URLError as e:
-                print('Malformed thread url -- removing from watchlist')
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-            if len(data) == 0:
-                continue
+    try:
+        urllib.request.urlretrieve(file_url, save_path)
+        print(f"Downloaded: {board_code}/{thread_id}/{file_id}{file_ext}")
+    except Exception as e:
+        print(f"Failed to download {file_url}: {e}")
 
-            posts = data['posts']
-            found_new = False
-            for post in posts:
-                comment_no = post['no']
-                if last_checked >= comment_no:
-                    continue
+def check_threads():
+    """Checks watched threads for new images and updates the watchlist."""
+    print(' _   ___  _     _  _______  _______  _______  __   __  _______  __    _ ')
+    print('| | |   || | _ | ||   _   ||       ||       ||  | |  ||   _   ||  |  | |')
+    print('| |_|   || || || ||  |_|  ||_     _||       ||  |_|  ||  |_|  ||   |_| |')
+    print('|       ||       ||       |  |   |  |       ||       ||       ||       |')
+    print('|___    ||       ||       |  |   |  |      _||       ||       ||  _    |')
+    print('    |   ||   _   ||   _   |  |   |  |     |_ |   _   ||   _   || | |   |')
+    print('    |___||__| |__||__| |__|  |___|  |_______||__| |__||__| |__||_|  |__|')
+    print()
+    print("Press Ctrl+C to exit.\n")
 
-                if 'tim' in post and 'ext' in post:
-                    found_new = True
-                    file_id = post['tim']
-                    file_ext = post['ext']
-                    file_url = f'https://i.4cdn.org/{board_code}/{file_id}{file_ext}'
-                    print(f'{board_code}/{thread_id}/{comment_no} - {file_url}')
+    try:
+        while True:
+            watchlist = load_watchlist()
+            updated_threads = []
 
-                    save_path = f'downloads/{board_code}/{thread_id}/{file_id}{file_ext}'
-                    directory = os.path.dirname(save_path)
-                    if not os.path.exists(directory):
-                        os.makedirs(directory)
+            print(f"{datetime.now().isoformat()} - Checking {len(watchlist)} watched thread/s")
 
-                    urllib.request.urlretrieve(file_url, save_path)
+            for thread in watchlist:
+                thread_url = thread['url']
+                last_checked = int(thread['lastChecked'])
+                board_code = thread['boardCode']
+                thread_id = thread['threadId']
 
-                thread_data['lastChecked'] = comment_no
+                data = fetch_thread_data(thread_url)
+                if not data:
+                    continue # Skip if data couldn't be retrieved
 
-            if found_new:
-                print()
+                found_new = False
+                for post in data.get('posts', []):
+                    comment_no = post['no']
+                    if last_checked >= comment_no:
+                        continue # Skip if no new media
 
-            updated_threads.append(thread_data)
+                    if 'tim' in post and 'ext' in post:
+                        found_new = True
+                        download_file(board_code, thread_id, post['tim'], post['ext'])
 
-        with open("threads.json", "w") as file:
-            json.dump(updated_threads, file, indent=4)
+                    thread['lastChecked'] = comment_no
 
-        time.sleep(20)
-except KeyboardInterrupt:
-    print('Exiting...')
-    print('Bye.')
+                if found_new:
+                    print()
+
+                updated_threads.append(thread)
+
+            # Save updated watchlist
+            save_watchlist(updated_threads)
+
+            time.sleep(CHECK_INTERVAL)
+
+    except KeyboardInterrupt:
+        print("\nExiting... Bye!")
+
+if __name__ == "__main__":
+    check_threads()

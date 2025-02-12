@@ -53,7 +53,7 @@ python watcher.py
 ## Todo
 
 - [ ] Adjust interval through flag
-- [ ] Better logging
+- [x] ~~Better logging~~
 
 ## Known Issues
 
